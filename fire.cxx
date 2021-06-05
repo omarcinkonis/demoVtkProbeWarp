@@ -37,53 +37,58 @@ int main()
   renderWindowInteractor->SetRenderWindow(renderWindow);
 
   // Import the VRML Files that define the geometry
-  vtkNew<vtkVRMLImporter> vrmlImport;
-  vrmlImport->SetRenderWindow(renderWindow);
-  vrmlImport->SetFileName("D:\\VTK\\Projects\\source\\Marcinkonis_MKDFs-18\\fire_geometry.wrl");
-  vrmlImport->Update();
+  vtkNew<vtkVRMLImporter> importer;
+  importer->SetRenderWindow(renderWindow);
+  importer->SetFileName("D:\\VTK\\Projects\\source\\Marcinkonis_MKDFs-18\\fire_geometry.wrl");
+  importer->Update();
 
-  // Read the UnstructuredGrid define the solution
-  vtkNew<vtkUnstructuredGridReader> solution;
-  solution->SetFileName("D:\\VTK\\Projects\\source\\Marcinkonis_MKDFs-18\\fire.vtk");
-  solution->Update();
+  // Read the UnstructuredGrid and define the reader
+  vtkNew<vtkUnstructuredGridReader> reader;
+  reader->SetFileName("D:\\VTK\\Projects\\source\\Marcinkonis_MKDFs-18\\fire.vtk");
+  reader->Update();
+
   // Create an outline
   vtkNew<vtkGenericOutlineFilter> outline;
-  outline->SetInputConnection(solution->GetOutputPort());
+  outline->SetInputConnection(reader->GetOutputPort());
 
-  // Create Seeds
-  vtkNew<vtkPointSource> seeds;
-  seeds->SetRadius(0.2);
-  seeds->SetCenter(3.5, 0.625, 1.25);
-  seeds->SetNumberOfPoints(50);
+  //// Create Seeds
+  //vtkNew<vtkPointSource> seeds;
+  //seeds->SetRadius(0.2);
+  //seeds->SetCenter(3.5, 0.625, 1.25);
+  //seeds->SetNumberOfPoints(50);
 
-  // Create streamlines
-  vtkNew<vtkStreamTracer> streamTracer;
-  streamTracer->SetIntegrationDirectionToBoth();
-  streamTracer->SetInputConnection(solution->GetOutputPort());
-  streamTracer->SetSourceConnection(seeds->GetOutputPort());
-  streamTracer->SetMaximumPropagation(50);
-  streamTracer->SetInitialIntegrationStep(.2);
-  streamTracer->SetMinimumIntegrationStep(.01);
-  streamTracer->SetIntegratorType(1);
-  streamTracer->SetComputeVorticity(1);
+  //// Create streamlines
+  //vtkNew<vtkStreamTracer> streamTracer;
+  //streamTracer->SetIntegrationDirectionToBoth();
+  //streamTracer->SetInputConnection(solution->GetOutputPort());
+  //streamTracer->SetSourceConnection(seeds->GetOutputPort());
+  //streamTracer->SetMaximumPropagation(50);
+  //streamTracer->SetInitialIntegrationStep(.2);
+  //streamTracer->SetMinimumIntegrationStep(.01);
+  //streamTracer->SetIntegratorType(1);
+  //streamTracer->SetComputeVorticity(1);
 
-  vtkNew<vtkTubeFilter> tubes;
-  tubes->SetInputConnection(streamTracer->GetOutputPort());
-  tubes->SetNumberOfSides(8);
-  tubes->SetRadius(.02);
-  tubes->SetVaryRadius(0);
+  //vtkNew<vtkTubeFilter> tubes;
+  //tubes->SetInputConnection(streamTracer->GetOutputPort());
+  //tubes->SetNumberOfSides(8);
+  //tubes->SetRadius(.02);
+  //tubes->SetVaryRadius(0);
 
-  vtkNew<vtkPolyDataMapper> mapTubes;
-  mapTubes->SetInputConnection(tubes->GetOutputPort());
-  mapTubes->SetScalarRange(solution->GetOutput()->GetScalarRange());
+  //vtkNew<vtkPolyDataMapper> mapTubes;
+  //mapTubes->SetInputConnection(tubes->GetOutputPort());
+  //mapTubes->SetScalarRange(solution->GetOutput()->GetScalarRange());
 
-  vtkNew<vtkActor> tubesActor;
-  tubesActor->SetMapper(mapTubes);
+  //vtkNew<vtkActor> tubesActor;
+  //tubesActor->SetMapper(mapTubes);
+
+  // Create probePolyData
+  vtkNew<vtkPolyData> probePolyData;
+  //probePolyData->SetPoints(reader->GetOutputPort());
 
   // Create an Isosurface
   vtkNew<vtkContourFilter> isoSurface;
   isoSurface->SetValue(0, 550.0);
-  isoSurface->SetInputConnection(solution->GetOutputPort());
+  isoSurface->SetInputConnection(reader->GetOutputPort());
 
   vtkNew<vtkPolyDataMapper> isoSurfaceMapper;
   isoSurfaceMapper->SetInputConnection(isoSurface->GetOutputPort());
@@ -95,7 +100,7 @@ int main()
   isoSurfaceActor->GetProperty()->SetDiffuseColor(isoSurfaceColor.GetData());
 
   vtkNew<vtkPlaneSource> planeSource;
-  planeSource->SetCenter(seeds->GetCenter());
+  planeSource->SetCenter(isoSurfaceActor->GetCenter());
   planeSource->SetNormal(1.0, 0.0, 0.0);
   vtkNew<vtkPolyDataMapper> planeMapper;
   planeMapper->SetInputConnection(planeSource->GetOutputPort());
