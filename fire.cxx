@@ -51,44 +51,6 @@ int main()
   reader->SetFileName("D:\\VTK\\Projects\\source\\Marcinkonis_MKDFs-18\\fire.vtk");
   reader->Update();
 
-  // Create an outline
-  //vtkNew<vtkGenericOutlineFilter> outline;
-  //outline->SetInputConnection(reader->GetOutputPort());
-
-  //// Create Seeds
-  //vtkNew<vtkPointSource> seeds;
-  //seeds->SetRadius(0.2);
-  //seeds->SetCenter(3.5, 0.625, 1.25);
-  //seeds->SetNumberOfPoints(50);
-
-  //// Create streamlines
-  //vtkNew<vtkStreamTracer> streamTracer;
-  //streamTracer->SetIntegrationDirectionToBoth();
-  //streamTracer->SetInputConnection(solution->GetOutputPort());
-  //streamTracer->SetSourceConnection(seeds->GetOutputPort());
-  //streamTracer->SetMaximumPropagation(50);
-  //streamTracer->SetInitialIntegrationStep(.2);
-  //streamTracer->SetMinimumIntegrationStep(.01);
-  //streamTracer->SetIntegratorType(1);
-  //streamTracer->SetComputeVorticity(1);
-
-  //vtkNew<vtkTubeFilter> tubes;
-  //tubes->SetInputConnection(streamTracer->GetOutputPort());
-  //tubes->SetNumberOfSides(8);
-  //tubes->SetRadius(.02);
-  //tubes->SetVaryRadius(0);
-
-  //vtkNew<vtkPolyDataMapper> mapTubes;
-  //mapTubes->SetInputConnection(tubes->GetOutputPort());
-  //mapTubes->SetScalarRange(solution->GetOutput()->GetScalarRange());
-
-  //vtkNew<vtkActor> tubesActor;
-  //tubesActor->SetMapper(mapTubes);
-
-  // Create probePolyData
-  vtkNew<vtkPolyData> probePolyData;
-  //probePolyData->SetPoints(reader->GetOutputPort());
-
   // Create an Isosurface
   vtkNew<vtkContourFilter> isoSurface;
   isoSurface->SetValue(0, 550.0);
@@ -105,16 +67,7 @@ int main()
 
   vtkNew<vtkPlane> plane;
   plane->SetOrigin(isoSurfaceActor->GetCenter());
-  plane->SetNormal((1, 0, 0) + isoSurfaceActor->GetCenter());
-  //vtkNew<vtkPolyDataMapper> planeMapper;
-  //planeMapper->SetInputConnection(planeSource->GetOutputPort());
-
-  //vtkNew<vtkActor> planeActor;
-  //planeActor->SetMapper(planeMapper);
-  //planeActor->GetProperty()->SetOpacity(1.0);
-  //planeActor->GetProperty()->SetSpecular(.4);
-  //planeActor->GetProperty()->SetSpecularPower(80);
-  //planeActor->GetProperty()->SetDiffuseColor(planeColor.GetData());
+  plane->SetNormal(1.0, 0.0, 0.0);
 
   vtkNew<vtkCutter> cutter;
   cutter->SetCutFunction(plane);
@@ -128,6 +81,9 @@ int main()
 
   vtkNew<vtkWarpScalar> gridWarpScalar;
   gridWarpScalar->SetInputConnection(probe->GetOutputPort());
+  gridWarpScalar->SetScaleFactor(0.002);
+  gridWarpScalar->SetUseNormal(true);
+  gridWarpScalar->SetNormal(1.0, 0.0, 0.0);
   gridWarpScalar->Update();
 
   // Mesh the output grid points
@@ -145,24 +101,6 @@ int main()
 
   //
 
-  //vtkNew<vtkSphereSource> sphere;
-  //sphere->SetCenter(seeds->GetCenter());
-  //sphere->SetRadius(seeds->GetRadius());
-  //sphere->SetThetaResolution(20);
-  //sphere->SetPhiResolution(11);
-  //vtkNew<vtkPolyDataMapper> sphereMapper;
-  //sphereMapper->SetInputConnection(sphere->GetOutputPort());
-
-  //vtkNew<vtkActor> sphereActor;
-  //sphereActor->SetMapper(sphereMapper);
-  //sphereActor->GetProperty()->SetOpacity(1.0);
-  //sphereActor->GetProperty()->SetSpecular(.4);
-  //sphereActor->GetProperty()->SetSpecularPower(80);
-  //sphereActor->GetProperty()->SetDiffuseColor(sphereColor.GetData());
-
-  //renderer->AddActor(tubesActor);
-  //renderer->AddActor(sphereActor);
-  //renderer->AddActor(planeActor);
   renderer->AddActor(gridActor);
   renderer->AddActor(isoSurfaceActor);
 
