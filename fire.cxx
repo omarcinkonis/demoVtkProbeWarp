@@ -16,8 +16,12 @@
 #include <vtkUnstructuredGrid.h>
 #include <vtkVRMLImporter.h>
 #include <vtkUnstructuredGridReader.h>
-#include <vtkPlaneSource.h>
+#include <vtkPlane.h>
 #include <vtkProbeFilter.h>
+#include <vtkCutter.h>
+#include <vtkWarpScalar.h>
+#include <vtkDelaunay2D.h>
+#include <vtkDataSetMapper.h>
 
 int main()
 {
@@ -48,8 +52,8 @@ int main()
   reader->Update();
 
   // Create an outline
-  vtkNew<vtkGenericOutlineFilter> outline;
-  outline->SetInputConnection(reader->GetOutputPort());
+  //vtkNew<vtkGenericOutlineFilter> outline;
+  //outline->SetInputConnection(reader->GetOutputPort());
 
   //// Create Seeds
   //vtkNew<vtkPointSource> seeds;
@@ -99,25 +103,47 @@ int main()
   isoSurfaceActor->GetProperty()->SetOpacity(.5);
   isoSurfaceActor->GetProperty()->SetDiffuseColor(isoSurfaceColor.GetData());
 
-  vtkNew<vtkPlaneSource> planeSource;
-  planeSource->SetCenter(isoSurfaceActor->GetCenter());
-  planeSource->SetNormal(1.0, 0.0, 0.0);
-  vtkNew<vtkPolyDataMapper> planeMapper;
-  planeMapper->SetInputConnection(planeSource->GetOutputPort());
+  vtkNew<vtkPlane> plane;
+  plane->SetOrigin(isoSurfaceActor->GetCenter());
+  plane->SetNormal((1, 0, 0) + isoSurfaceActor->GetCenter());
+  //vtkNew<vtkPolyDataMapper> planeMapper;
+  //planeMapper->SetInputConnection(planeSource->GetOutputPort());
 
-  vtkNew<vtkActor> planeActor;
-  planeActor->SetMapper(planeMapper);
-  planeActor->GetProperty()->SetOpacity(1.0);
-  planeActor->GetProperty()->SetSpecular(.4);
-  planeActor->GetProperty()->SetSpecularPower(80);
-  planeActor->GetProperty()->SetDiffuseColor(planeColor.GetData());
+  //vtkNew<vtkActor> planeActor;
+  //planeActor->SetMapper(planeMapper);
+  //planeActor->GetProperty()->SetOpacity(1.0);
+  //planeActor->GetProperty()->SetSpecular(.4);
+  //planeActor->GetProperty()->SetSpecularPower(80);
+  //planeActor->GetProperty()->SetDiffuseColor(planeColor.GetData());
+
+  vtkNew<vtkCutter> cutter;
+  cutter->SetCutFunction(plane);
+  cutter->SetInputConnection(reader->GetOutputPort());
+  cutter->Update();
+
+  vtkNew<vtkProbeFilter> probe;
+  probe->SetInputConnection(cutter->GetOutputPort());
+  probe->SetSourceConnection(reader->GetOutputPort());
+  probe->Update();
+
+  vtkNew<vtkWarpScalar> gridWarpScalar;
+  gridWarpScalar->SetInputConnection(probe->GetOutputPort());
+  gridWarpScalar->Update();
+
+  // Mesh the output grid points
+  vtkNew<vtkDelaunay2D> gridDelaunay;
+  gridDelaunay->SetInputConnection(gridWarpScalar->GetOutputPort());
+
+  vtkNew<vtkDataSetMapper> gridMapper;
+  gridMapper->SetInputConnection(gridDelaunay->GetOutputPort());
+  gridMapper->ScalarVisibilityOff();
+
+  vtkNew<vtkActor> gridActor;
+  gridActor->SetMapper(gridMapper);
+  gridActor->GetProperty()->SetColor(colors->GetColor3d("SteelBlue").GetData());
+  gridActor->GetProperty()->SetPointSize(3);
 
   //
-
-  //vtkNew<vtkProbeFilter> probe;
-  //probe->SetSourceData(image);
-  //probe->SetInputData(probePolyData);
-  //probe->Update();
 
   //vtkNew<vtkSphereSource> sphere;
   //sphere->SetCenter(seeds->GetCenter());
@@ -136,11 +162,12 @@ int main()
 
   //renderer->AddActor(tubesActor);
   //renderer->AddActor(sphereActor);
-  renderer->AddActor(planeActor);
+  //renderer->AddActor(planeActor);
+  renderer->AddActor(gridActor);
   renderer->AddActor(isoSurfaceActor);
 
   renderer->SetBackground(backgroundColor.GetData());
-  renderWindow->SetSize(640, 512);
+  renderWindow->SetSize(1920, 1080);
   renderWindow->SetWindowName("Marcinkonis_MKDfs-18");
   renderWindow->Render();
 
