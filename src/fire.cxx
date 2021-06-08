@@ -27,8 +27,6 @@ int main()
 {
   vtkNew<vtkNamedColors> colors;
   vtkColor3d isoSurfaceColor = colors->GetColor3d("WhiteSmoke");
-  // vtkColor3d sphereColor = colors->GetColor3d("hotpink");
-  vtkColor3d planeColor = colors->GetColor3d("hotpink");
   vtkColor3d backgroundColor = colors->GetColor3d("SlateGray");
 
   vtkNew<vtkRenderer> renderer;
@@ -43,12 +41,12 @@ int main()
   // Import the VRML Files that define the geometry
   vtkNew<vtkVRMLImporter> importer;
   importer->SetRenderWindow(renderWindow);
-  importer->SetFileName("D:\\VTK\\Projects\\source\\Marcinkonis_MKDFs-18\\fire_geometry.wrl");
+  importer->SetFileName("../data/fire_geometry.wrl");
   importer->Update();
 
   // Read the UnstructuredGrid and define the reader
   vtkNew<vtkUnstructuredGridReader> reader;
-  reader->SetFileName("D:\\VTK\\Projects\\source\\Marcinkonis_MKDFs-18\\fire.vtk");
+  reader->SetFileName("../data/fire.vtk");
   reader->Update();
 
   // Create an Isosurface
