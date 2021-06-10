@@ -20,8 +20,8 @@
 #include <vtkProbeFilter.h>
 #include <vtkCutter.h>
 #include <vtkWarpScalar.h>
-#include <vtkDelaunay2D.h>
 #include <vtkDataSetMapper.h>
+#include <vtkPointData.h>
 
 int main()
 {
@@ -72,34 +72,38 @@ int main()
   cutter->SetInputConnection(reader->GetOutputPort());
   cutter->Update();
 
+  vtkNew<vtkPolyDataMapper> cutterMapper;
+  cutterMapper->SetInputConnection(cutter->GetOutputPort());
+  cutterMapper->ScalarVisibilityOff();
+
+  vtkNew<vtkActor> cutterActor;
+  cutterActor->SetMapper(cutterMapper);
+  cutterActor->GetProperty()->SetRepresentationToWireframe();
+
   vtkNew<vtkProbeFilter> probe;
   probe->SetInputConnection(cutter->GetOutputPort());
   probe->SetSourceConnection(reader->GetOutputPort());
   probe->Update();
 
-  vtkNew<vtkWarpScalar> gridWarpScalar;
-  gridWarpScalar->SetInputConnection(probe->GetOutputPort());
-  gridWarpScalar->SetScaleFactor(0.002);
-  gridWarpScalar->SetUseNormal(true);
-  gridWarpScalar->SetNormal(1.0, 0.0, 0.0);
-  gridWarpScalar->Update();
+  vtkNew<vtkWarpScalar> warp;
+  warp->SetInputConnection(probe->GetOutputPort());
+  warp->SetScaleFactor(0.002);
+  warp->SetNormal(1.0, 0.0, 0.0);
+  warp->Update();
 
-  // Mesh the output grid points
-  vtkNew<vtkDelaunay2D> gridDelaunay;
-  gridDelaunay->SetInputConnection(gridWarpScalar->GetOutputPort());
-
-  vtkNew<vtkDataSetMapper> gridMapper;
-  gridMapper->SetInputConnection(gridDelaunay->GetOutputPort());
-  gridMapper->ScalarVisibilityOff();
-
-  vtkNew<vtkActor> gridActor;
-  gridActor->SetMapper(gridMapper);
-  gridActor->GetProperty()->SetColor(colors->GetColor3d("SteelBlue").GetData());
-  gridActor->GetProperty()->SetPointSize(3);
+  vtkNew<vtkPolyDataMapper> warpMapper;
+  warpMapper->SetInputConnection(warp->GetOutputPort());
+  warpMapper->SetScalarModeToUsePointFieldData();
+  warpMapper->SelectColorArray("t");
+  warpMapper->SetScalarRange(reader->GetOutput()->GetPointData()->GetArray("t")->GetRange(0));
+  
+  vtkNew<vtkActor> warpActor;
+  warpActor->SetMapper(warpMapper);
 
   //
 
-  renderer->AddActor(gridActor);
+  renderer->AddActor(cutterActor);
+  renderer->AddActor(warpActor);
   renderer->AddActor(isoSurfaceActor);
 
   renderer->SetBackground(backgroundColor.GetData());
